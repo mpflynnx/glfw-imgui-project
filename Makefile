@@ -1,69 +1,42 @@
-########################################################################
-####################### Makefile Template ##############################
-########################################################################
+# to compile and run in one command type:
+# make run
 
-# Compiler settings - Can be customized.
-CC = g++
-CXXFLAGS = -g -std=c++17 -Wall
-LDFLAGS = 
+# define which compiler to use
+CXX    := g++
+OUTPUT := glfw_app
 
-# Makefile settings - Can be customized.
-APPNAME = myapp
-EXT = .cpp
-SRCDIR = src
-OBJDIR = obj
+# if you need to manually specify your GLFW install dir, do so here
+# for me it was:
+# GLFW_DIR  := /usr/include/GLFW
 
-############## Do not change anything from here downwards! #############
-SRC = $(wildcard $(SRCDIR)/*$(EXT))
-OBJ = $(SRC:$(SRCDIR)/%$(EXT)=$(OBJDIR)/%.o)
-DEP = $(OBJ:$(OBJDIR)/%.o=%.d)
-# UNIX-based OS variables & settings
-RM = rm
-DELOBJ = $(OBJ)
-# Windows OS variables & settings
-DEL = del
-EXE = .exe
-WDELOBJ = $(SRC:$(SRCDIR)/%$(EXT)=$(OBJDIR)\\%.o)
+# compiler and linker flags
+CXX_FLAGS := -O3 -std=c++20 -Wno-unused-result -Wno-deprecated-declarations
+INCLUDES  := -I ./src -I ./src/include -I ./src/imgui
+LDFLAGS   := -O3 -lglfw -lGL
 
-########################################################################
-####################### Targets beginning here #########################
-########################################################################
+# the source files for the ecs game engine
+SRC_FILES := $(wildcard src/*.cpp src/imgui/*.cpp) 
+OBJ_FILES := $(SRC_FILES:.cpp=.o)
 
-all: $(APPNAME)
+# Include dependency files
+DEP_FILES := $(SRC_FILES:.cpp=.d)
+-include $(DEP_FILES)
 
-# Builds the app
-$(APPNAME): $(OBJ)
-	$(CC) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+# all of these targets will be made if you just type make
+all:$(OUTPUT)
 
-# Creates the dependecy rules
-%.d: $(SRCDIR)/%$(EXT)
-	@$(CPP) $(CFLAGS) $< -MM -MT $(@:%.d=$(OBJDIR)/%.o) >$@
+# define the main executable requirements / command
+$(OUTPUT):$(OBJ_FILES) Makefile
+	$(CXX) $(OBJ_FILES) $(LDFLAGS) -o ./bin/$@ 
 
-# Includes all .h files
--include $(DEP)
+# specifies how the object files are compiled from cpp files
+.cpp.o:
+	$(CXX) -MMD -MP -c $(CXX_FLAGS) $(INCLUDES) $< -o $@
 
-# Building rule for .o files and its .c/.cpp in combination with all .h
-$(OBJDIR)/%.o: $(SRCDIR)/%$(EXT)
-	$(CC) $(CXXFLAGS) -o $@ -c $<
-
-################### Cleaning rules for Unix-based OS ###################
-# Cleans complete project
-.PHONY: clean
+# typing 'make clean' will remove all intermediate build files
 clean:
-	$(RM) $(DELOBJ) $(DEP) $(APPNAME)
-
-# Cleans only all files with the extension .d
-.PHONY: cleandep
-cleandep:
-	$(RM) $(DEP)
-
-#################### Cleaning rules for Windows OS #####################
-# Cleans complete project
-.PHONY: cleanw
-cleanw:
-	$(DEL) $(WDELOBJ) $(DEP) $(APPNAME)$(EXE)
-
-# Cleans only all files with the extension .d
-.PHONY: cleandepw
-cleandepw:
-	$(DEL) $(DEP)
+	rm -f $(OBJ_FILES) $(DEP_FILES) ./bin/$(OUTPUT)
+    
+# typing 'make run' will compile and run the program
+run: $(OUTPUT)
+	cd bin && ./$(OUTPUT) && cd ..
