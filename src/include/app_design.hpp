@@ -21,7 +21,7 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-
+template< typename Derived>
 class App
 {
 
@@ -93,7 +93,7 @@ public:
     }
 
     // Destructor
-    virtual ~App()
+    ~App()
     {
         // Cleanup
         ImGui_ImplOpenGL2_Shutdown();
@@ -165,8 +165,15 @@ public:
 
     }
 
-    virtual void Update() = 0;
-    virtual void StartUp() = 0;
+    void Update()
+    {
+        static_cast<Derived*>(this)->Update();
+    }
+
+    void StartUp()
+    {
+        static_cast<Derived*>(this)->StartUp();
+    }
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
